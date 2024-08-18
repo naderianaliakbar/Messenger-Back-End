@@ -104,7 +104,7 @@ class UsersController extends Controllers {
                         validated   : $input.validated,
                         role        : 'user',
                         status      : 'active',
-                        _permissions: responseDefaultPermission.data.id
+                        _permissions: responseDefaultPermission.data._id
                     }).then(
                         (response) => {
                             // check the result ... and return
@@ -127,12 +127,12 @@ class UsersController extends Controllers {
         });
     }
 
-    static item($input) {
+    static item($filter, $options) {
         return new Promise((resolve, reject) => {
             // check filter is valid and remove other parameters (just valid query by user role) ...
 
             // filter
-            this.model.item($input).then(
+            this.model.item($filter, $options).then(
                 (response) => {
                     // check the result ... and return
                     return resolve({
@@ -195,7 +195,7 @@ class UsersController extends Controllers {
         });
     }
 
-    static get($id) {
+    static get($id, $type = 'api') {
         return new Promise((resolve, reject) => {
             // check filter is valid and remove other parameters (just valid query by user role) ...
 
@@ -203,7 +203,8 @@ class UsersController extends Controllers {
             this.model.get($id).then(
                 async (response) => {
                     // reformat row for output
-                    response =  await this.outputBuilder(response.toObject());
+                    if ($type === 'api')
+                        response = await this.outputBuilder(response.toObject());
 
                     return resolve({
                         code: 200,

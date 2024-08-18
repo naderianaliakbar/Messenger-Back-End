@@ -25,11 +25,13 @@ app.use(cors());
 
 process.env.TZ = "Asia/Tehran";
 
-import usersRouter               from './routes/users.js';
-import authRouter                from './routes/auth.js';
+import usersRouter    from './routes/users.js';
+import authRouter     from './routes/auth.js';
+import contactsRouter from './routes/contacts.js';
 
 // add routes
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/contacts', contactsRouter);
 
 export default app;
