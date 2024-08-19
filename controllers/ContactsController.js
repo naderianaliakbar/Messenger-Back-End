@@ -35,6 +35,16 @@ class ContactsController extends Controllers {
                         (contactUser) => {
                             contactUser = contactUser.data;
 
+                            // check if contact is user self
+                            if (contactUser._id.toString() === $input.user.data._id) {
+                                return reject({
+                                    code: 400,
+                                    data: {
+                                        message: 'You cannot add yourself as a contact'
+                                    }
+                                });
+                            }
+
                             // find the user self
                             UsersController.get($input.user.data._id, {}, 'system').then(
                                 (user) => {
