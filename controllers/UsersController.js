@@ -2,7 +2,7 @@ import Controllers           from '../core/Controllers.js';
 import PermissionsController from './PermissionsController.js';
 import UsersModel            from '../models/UsersModel.js';
 import Logger                from '../core/Logger.js';
-import persianDate           from "persian-date";
+import HelpersController     from './HelpersController.js';
 
 class UsersController extends Controllers {
     static model = new UsersModel();
@@ -102,6 +102,7 @@ class UsersController extends Controllers {
                         phone       : $input.phone,
                         password    : $input.password,
                         validated   : $input.validated,
+                        color       : HelpersController.generateRandomColor(),
                         role        : 'user',
                         status      : 'active',
                         _permissions: responseDefaultPermission.data._id
@@ -195,12 +196,12 @@ class UsersController extends Controllers {
         });
     }
 
-    static get($id, $type = 'api') {
+    static get($id, $options = {}, $type = 'api') {
         return new Promise((resolve, reject) => {
             // check filter is valid and remove other parameters (just valid query by user role) ...
 
             // filter
-            this.model.get($id).then(
+            this.model.get($id, $options).then(
                 async (response) => {
                     // reformat row for output
                     if ($type === 'api')

@@ -5,7 +5,6 @@ import UserController        from '../../controllers/UsersController.js';
 import {ObjectId}            from 'mongodb';
 import InputsController      from '../../controllers/InputsController.js';
 import AuthController        from '../../controllers/AuthController.js';
-import HelpersController     from '../../controllers/HelpersController.js';
 
 
 class LoginByPhone extends LoginStrategies {
@@ -191,8 +190,7 @@ class LoginByPhone extends LoginStrategies {
                                                         },
                                                         phone    : $input.phone,
                                                         password : $password,
-                                                        validated: ['phone'],
-                                                        color    : HelpersController.generateRandomColor()
+                                                        validated: ['phone']
                                                     }).then(
                                                         // user inserted
                                                         (responseUserInsertQuery) => {

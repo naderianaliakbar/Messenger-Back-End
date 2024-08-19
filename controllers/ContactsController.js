@@ -36,7 +36,7 @@ class ContactsController extends Controllers {
                             contactUser = contactUser.data;
 
                             // find the user self
-                            UsersController.get($input.user.data._id, 'system').then(
+                            UsersController.get($input.user.data._id, {}, 'system').then(
                                 (user) => {
                                     user = user.data;
 
@@ -124,50 +124,25 @@ class ContactsController extends Controllers {
 
     static listOfContacts($input) {
         return new Promise((resolve, reject) => {
-            // check filter is valid and remove other parameters (just valid query by user role) ...
-
-            let query = this.queryBuilder($input);
-
-            let options = {
-                sort      : $input.sort,
-                projection: {
-                    password: 0
-                }
-            };
-
-            if ($input.pagination) {
-                options.skip  = $input.offset;
-                options.limit = $input.perPage;
-            }
-
-            // filter
-            this.model.list(query, options).then(
-                (response) => {
-                    // get count
-                    this.model.count(query).then(async (count) => {
-
-                        // create output
-                        for (const row of response) {
-                            const index     = response.indexOf(row);
-                            response[index] = await this.outputBuilder(row);
+            UsersController.get($input.user.data._id, {
+                select  : 'contacts',
+                populate: [
+                    {path: 'contacts._user', select: '_id avatars color'},
+                ]
+            }, 'system').then(
+                (user) => {
+                    user = user.data;
+                    return resolve({
+                        code: 200,
+                        data: {
+                            list: user.contacts
                         }
-
-                        // return result
-                        return resolve({
-                            code: 200,
-                            data: {
-                                list : response,
-                                total: count
-                            }
-                        });
-
                     });
                 },
-                (error) => {
-                    return reject({
-                        code: 500
-                    });
-                });
+                (response) => {
+                    return reject(response);
+                }
+            );
         });
     }
 

@@ -36,6 +36,9 @@ router.get(
         // create clean input
         let $input = InputsController.clearInput(req.query);
 
+        // add author to created user
+        $input.user = req.user;
+
         ContactsController.listOfContacts($input).then(
             (response) => {
                 return res.status(response.code).json(response.data);
