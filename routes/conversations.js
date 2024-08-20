@@ -31,11 +31,16 @@ router.post(
 
 router.get(
     '/',
+    AuthController.authorizeJWT,
+    AuthController.checkAccess,
     function (req, res) {
         // create clean input
-        let $input = InputsController.clearInput(req.params);
+        let $input = InputsController.clearInput(req.query);
 
-        ConversationsController.list($input).then(
+        // add author to created unit
+        $input.user = req.user;
+
+        ConversationsController.listOfConversations($input).then(
             (response) => {
                 return res.status(response.code).json(response.data);
             },

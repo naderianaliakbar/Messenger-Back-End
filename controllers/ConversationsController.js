@@ -1,6 +1,7 @@
 import Controllers        from '../core/Controllers.js';
 import ConversationsModel from '../models/ConversationsModel.js';
 import InputsController   from "./InputsController.js";
+import {ObjectId}         from "mongodb";
 
 class ConversationsController extends Controllers {
     static model = new ConversationsModel();
@@ -86,6 +87,32 @@ class ConversationsController extends Controllers {
         });
     }
 
+    static listOfConversations($input) {
+        return new Promise((resolve, reject) => {
+            let query = {};
+            let userId = new ObjectId($input.user.data._id);
+            $input.options = {};
+
+            // filter
+            this.model.listOfConversations(query,$input.options, userId).then(
+                (response) => {
+                    // check the result ... and return
+                    return resolve({
+                        code: 200,
+                        data: {
+                            list: response
+                        }
+                    });
+                },
+                (error) => {
+                    console.log(error);
+                    return reject({
+                        code: 500
+                    });
+                });
+        });
+    }
+
     static list($input) {
         return new Promise((resolve, reject) => {
             // check filter is valid and remove other parameters (just valid query by user role) ...
@@ -96,9 +123,7 @@ class ConversationsController extends Controllers {
                     // check the result ... and return
                     return resolve({
                         code: 200,
-                        data: {
-                            list: response
-                        }
+                        data: response
                     });
                 },
                 (error) => {

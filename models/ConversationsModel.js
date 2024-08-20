@@ -24,6 +24,126 @@ class ConversationsModel extends Models {
         super('conversations', ConversationsModel.schema);
     }
 
+    listOfConversations($filter, $options, $userId) {
+        return new Promise((resolve, reject) => {
+            const aggregationQuery = [
+                // مرحله 1: فیلتر کردن گفتگوهای کاربر
+                {
+                    $match: {
+                        members: $userId
+                    }
+                },
+                // مرحله 2: دریافت اطلاعات آخرین پیام
+                {
+                    $lookup: {
+                        from        : 'messages', // نام کالکشن پیام‌ها
+                        localField  : '_id',
+                        foreignField: '_conversation',
+                        as          : 'lastMessage'
+                    }
+                },
+                {
+                    $unwind: {
+                        path                      : '$lastMessage',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                // مرتب‌سازی پیام‌ها بر اساس زمان ارسال و فقط آخرین پیام را نگه می‌داریم
+                {
+                    $sort: {
+                        'lastMessage.createdAt': -1
+                    }
+                },
+                {
+                    $group: {
+                        _id             : '$_id',
+                        conversationData: {$first: '$$ROOT'}, // اطلاعات گفتگو
+                        lastMessage     : {$first: '$lastMessage'} // آخرین پیام
+                    }
+                },
+                {
+                    $addFields: {
+                        'conversationData.lastMessage': '$lastMessage'
+                    }
+                },
+                {
+                    $replaceRoot: {
+                        newRoot: '$conversationData'
+                    }
+                },
+                // مرحله 3: محاسبه تعداد پیام‌های ناخوانده
+                {
+                    $lookup: {
+                        from    : 'messages',
+                        let     : {conversationId: '$_id'},
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            {$eq: ['$_conversation', '$$conversationId']},
+                                            {$ne: ['$sender', $userId]},
+                                            {$not: {$in: [$userId, '$_readBy']}}
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                $count: 'unreadCount'
+                            }
+                        ],
+                        as      : 'unreadCount'
+                    }
+                },
+                {
+                    $addFields: {
+                        unreadCount: {
+                            $cond: {
+                                if  : {$gt: [{$size: '$unreadCount'}, 0]},
+                                then: {$arrayElemAt: ['$unreadCount.unreadCount', 0]},
+                                else: 0
+                            }
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        lastMessage   : 1,
+                        unreadCount   : 1,
+                        _id           : 1,
+                        type          : 1,
+                        name          : 1,
+                        members       : 1,
+                        admins        : 1,
+                        _owner        : 1,
+                        description   : 1,
+                        avatars       : 1,
+                        _pinnedMessage: 1,
+                        settings      : 1,
+                        updatedAt     : 1
+                    }
+                }
+            ];
+
+            this.collectionModel.aggregate(aggregationQuery).then(
+                (response) => {
+                    if (response) {
+                        return resolve(response);
+                    } else {
+                        return resolve([]);
+                    }
+                },
+                (error) => {
+                    console.log(error);
+                    return reject({
+                        code: 500
+                    });
+                },
+            );
+
+        });
+    }
+
 }
 
 export default ConversationsModel;
