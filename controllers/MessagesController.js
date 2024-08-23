@@ -10,6 +10,35 @@ class MessagesController extends Controllers {
         super();
     }
 
+    static queryBuilder($input) {
+        let query = {};
+
+        // !!!!     after add validator check page and perpage is a number and > 0        !!!!
+
+        // pagination
+        if ($input.pagination) {
+            $input.perPage = $input.perPage ?? 10;
+            $input.page    = $input.page ?? 1;
+            $input.offset  = ($input.page - 1) * $input.perPage;
+        }
+
+        // sort
+        if ($input.sortColumn && $input.sortDirection) {
+            $input.sort                    = {};
+            $input.sort[$input.sortColumn] = Number($input.sortDirection);
+        } else {
+            $input.sort = {createdAt: -1};
+        }
+
+        for (const [$index, $value] of Object.entries($input)) {
+            switch ($index) {
+
+            }
+        }
+
+        return query;
+    }
+
     static insertOne($input) {
         return new Promise(async (resolve, reject) => {
             try {
@@ -26,7 +55,7 @@ class MessagesController extends Controllers {
                 // find the conversation
                 const conversation = await ConversationsController.get(
                     $input._conversation,
-                    {select: '_id'}
+                    {select: '_id updatedAt'}
                 );
 
                 let message           = {};
@@ -58,6 +87,10 @@ class MessagesController extends Controllers {
                 // add to db
                 await this.model.insertOne(message).then(
                     (response) => {
+                        // update conversation updatedAt field
+                        conversation.data.updatedAt = new Date();
+                        conversation.data.save();
+
                         // check the result ... and return
                         return resolve({
                             code: 200,
@@ -90,6 +123,55 @@ class MessagesController extends Controllers {
                 (response) => {
                     return reject(response);
                 });
+        });
+    }
+
+    static listOfMessages($input) {
+        return new Promise(async (resolve, reject) => {
+            try {
+
+                // check inputs is valid
+                await InputsController.validateInput($input, {
+                    _conversation: {type: 'mongoId', required: true}
+                });
+
+                // check conversation
+                const conversation = await ConversationsController.get($input._conversation, {
+                    select: 'members'
+                });
+
+                // check user is member of conversation
+                if (!conversation.data.members.includes($input.user.data._id)) {
+                    return reject({
+                        code: 403
+                    });
+                }
+
+                let query = this.queryBuilder($input);
+
+                let options = {
+                    sort: $input.sort,
+                };
+
+                if ($input.pagination) {
+                    options.skip  = $input.offset;
+                    options.limit = $input.perPage;
+                }
+
+                // filter
+                const messages = await this.model.list(query, options);
+                if (messages) {
+                    return resolve({
+                        code: 200,
+                        data: {
+                            list: messages
+                        }
+                    });
+                }
+
+            } catch (error) {
+                return reject(error);
+            }
         });
     }
 

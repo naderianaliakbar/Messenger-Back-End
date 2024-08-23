@@ -156,12 +156,13 @@ class LoginByPhone extends LoginStrategies {
                                                 data: {
                                                     token: token,
                                                     user : {
-                                                        _id    : responseUserQuery._id,
-                                                        name   : responseUserQuery.name,
-                                                        phone  : responseUserQuery.phone,
-                                                        avatars: responseUserQuery.avatars,
-                                                        color  : responseUserQuery.color,
-                                                        role   : responseUserQuery.role
+                                                        _id      : responseUserQuery._id,
+                                                        firstName: responseUserQuery.name.first,
+                                                        lastName : responseUserQuery.name.last,
+                                                        phone    : responseUserQuery.phone,
+                                                        avatars  : responseUserQuery.avatars,
+                                                        color    : responseUserQuery.color,
+                                                        role     : responseUserQuery.role
                                                     },
                                                 }
                                             });
@@ -208,12 +209,13 @@ class LoginByPhone extends LoginStrategies {
                                                                 data: {
                                                                     token: token,
                                                                     user : {
-                                                                        _id    : responseUserInsertQuery._id,
-                                                                        name   : responseUserInsertQuery.name,
-                                                                        phone  : responseUserInsertQuery.phone,
-                                                                        avatars: responseUserInsertQuery.avatars,
-                                                                        color  : responseUserInsertQuery.color,
-                                                                        role   : responseUserInsertQuery.role
+                                                                        _id      : responseUserInsertQuery._id,
+                                                                        firstName: responseUserInsertQuery.name.first,
+                                                                        lastName : responseUserInsertQuery.name.last,
+                                                                        phone    : responseUserInsertQuery.phone,
+                                                                        avatars  : responseUserInsertQuery.avatars,
+                                                                        color    : responseUserInsertQuery.color,
+                                                                        role     : responseUserInsertQuery.role
                                                                     },
                                                                 }
                                                             });

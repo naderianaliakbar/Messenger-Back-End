@@ -37,6 +37,8 @@ class ConversationsController extends Controllers {
                         const exitingConversation = await this.model.item({
                             type   : 'private',
                             members: {$all: [$input.contact, $input.user.data._id]}
+                        }).catch(() => {
+                            // do nothing
                         });
 
                         if (exitingConversation) {

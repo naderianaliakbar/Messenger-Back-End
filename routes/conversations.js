@@ -1,8 +1,8 @@
-import express          from "express";
-import InputsController from '../controllers/InputsController.js';
-import ConversationsController  from '../controllers/ConversationsController.js';
-import AuthController   from '../controllers/AuthController.js';
-import MessagesController from '../controllers/MessagesController.js';
+import express                 from "express";
+import InputsController        from '../controllers/InputsController.js';
+import ConversationsController from '../controllers/ConversationsController.js';
+import AuthController          from '../controllers/AuthController.js';
+import MessagesController      from '../controllers/MessagesController.js';
 
 let router = express.Router();
 
@@ -106,7 +106,7 @@ router.post(
     function (req, res, next) {
 
         // create clean input
-        let $input = InputsController.clearInput(req.body);
+        let $input  = InputsController.clearInput(req.body);
         let $params = InputsController.clearInput(req.params);
 
         // add author to created unit
@@ -116,6 +116,34 @@ router.post(
         $input._conversation = $params.conversationId;
 
         MessagesController.insertOne($input).then(
+            (response) => {
+                return res.status(response.code).json(response.data ?? {});
+            },
+            (error) => {
+                return res.status(error.code ?? 500).json(error.data ?? {});
+            }
+        );
+    }
+);
+
+
+router.get(
+    '/:conversationId/messages',
+    AuthController.authorizeJWT,
+    AuthController.checkAccess,
+    function (req, res, next) {
+
+        // create clean input
+        let $input  = InputsController.clearInput(req.body);
+        let $params = InputsController.clearInput(req.params);
+
+        // add user data
+        $input.user = req.user;
+
+        // add conversation _id to input
+        $input._conversation = $params.conversationId;
+
+        MessagesController.listOfMessages($input).then(
             (response) => {
                 return res.status(response.code).json(response.data ?? {});
             },
