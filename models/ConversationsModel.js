@@ -71,6 +71,35 @@ class ConversationsModel extends Models {
                         newRoot: '$conversationData'
                     }
                 },
+                // مرحله 3: دریافت اطلاعات اعضا فقط اگر نوع گفتگو یکی از موارد مورد نظر باشد
+                {
+                    $lookup: {
+                        from    : 'users',
+                        let     : {memberIds: '$members', conversationType: '$type'},
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            {$in: ['$$conversationType', ['private', 'group', 'personal', 'support']]}, // شرط برای نوع گفتگو
+                                            {$in: ['$_id', '$$memberIds']},
+                                            {$ne: ['$_id', $userId]} // حذف خود کاربر
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                $project: {
+                                    _id    : 1 ,
+                                    name   : 1,
+                                    avatars: 1,
+                                    color  : 1
+                                }
+                            }
+                        ],
+                        as      : 'memberDetails'
+                    }
+                },
                 // مرحله 3: محاسبه تعداد پیام‌های ناخوانده
                 {
                     $lookup: {
@@ -120,7 +149,8 @@ class ConversationsModel extends Models {
                         avatars       : 1,
                         _pinnedMessage: 1,
                         settings      : 1,
-                        updatedAt     : 1
+                        updatedAt     : 1,
+                        memberDetails : 1
                     }
                 }
             ];

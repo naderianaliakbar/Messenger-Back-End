@@ -23,8 +23,8 @@ class ContactsController extends Controllers {
         return new Promise((resolve, reject) => {
             // validate Input
             InputsController.validateInput($input, {
-                firstName: {type: 'string', required: true},
-                lastName : {type: 'string', required: true},
+                // firstName: {type: 'string', required: true},
+                // lastName : {type: 'string', required: true},
                 phone    : {type: 'string', required: true}
             }).then(
                 ($input) => {
@@ -51,11 +51,11 @@ class ContactsController extends Controllers {
                                     user = user.data;
 
                                     // found the contact
-                                    let foundContact = user.contacts.find(
-                                        contact => contact._user.toString() === contactUser._id.toString()
-                                    );
+                                    // let foundContact = user.contacts.find(
+                                    //     contact => contact._user.toString() === contactUser._id.toString()
+                                    // );
 
-                                    if (foundContact) {
+                                    if (user.contacts.includes(contactUser._id.toString())) {
                                         return reject({
                                             code: 400,
                                             data: {
@@ -64,13 +64,7 @@ class ContactsController extends Controllers {
                                         });
                                     } else {
                                         // add the contact
-                                        user.contacts.push({
-                                            name : {
-                                                first: $input.firstName,
-                                                last : $input.lastName
-                                            },
-                                            _user: contactUser._id
-                                        });
+                                        user.contacts.push(contactUser._id);
 
                                         user.save().then(
                                             (responseUserSave) => {
@@ -137,7 +131,7 @@ class ContactsController extends Controllers {
             UsersController.get($input.user.data._id, {
                 select  : 'contacts',
                 populate: [
-                    {path: 'contacts._user', select: '_id avatars color'},
+                    {path: 'contacts', select: '_id name avatars color'},
                 ]
             }, 'system').then(
                 (user) => {

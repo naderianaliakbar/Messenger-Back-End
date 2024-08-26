@@ -16,15 +16,7 @@ class UsersModel extends Models {
             validated   : [String],
             avatars     : [String],
             color       : String,
-            contacts    : [
-                {
-                    name: {
-                        first: String,
-                        last: String
-                    },
-                    _user: {type: Schema.Types.ObjectId, ref: 'users'},
-                }
-            ],
+            contacts    : [{type: Schema.Types.ObjectId, ref: 'users'}],
             _permissions: {type: Schema.Types.ObjectId, ref: 'permissions'}
         },
         {timestamps: true});

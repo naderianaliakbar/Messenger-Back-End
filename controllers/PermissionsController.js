@@ -8,28 +8,83 @@ class PermissionsController extends Controllers {
         super();
     }
 
-    static initDefaultPermissions() {
-        let admin = {
-            "title": "usersDefaultPermissions",
-            "type" : "collective",
-            "label": "admins",
-            "urls" : {
-                "/api/users"               : {
-                    "POST"  : true,
-                    "GET"   : true,
-                    "PUT"   : true,
-                    "DELETE": true
+    static async initDefaultPermissions() {
+        try {
+
+            let admin = {
+                "title": "adminsDefaultPermissions",
+                "type" : "collective",
+                "label": "admins",
+                "urls" : {
+                    "/api/users": {
+                        "POST"  : true,
+                        "GET"   : true,
+                        "PUT"   : true,
+                        "DELETE": true
+                    },
+                }
+            };
+
+            let user = {
+                "title": "usersDefaultPermissions",
+                "type" : "collective",
+                "label": "users",
+                "urls" : {
+                    "/api/contacts": {
+                        "POST"  : true,
+                        "GET"   : true,
+                        "PUT"   : true,
+                        "DELETE": true
+                    },
+                    "/api/conversations": {
+                        "POST": true,
+                        "GET": true,
+                        "PUT": true,
+                        "DELETE": true
+                    },
                 },
+            };
+
+            let adminsPermission = await this.model.item({
+                title: 'adminsDefaultPermissions',
+                type : 'collective',
+                label: 'admins'
+            }).catch((error) => {
+                // do nothing
+            });
+
+            let usersPermission = await this.model.item({
+                title: 'usersDefaultPermissions',
+                type : 'collective',
+                label: 'users'
+            }).catch((error) => {
+                // do nothing
+            });
+
+            // insert users permission
+            if (!usersPermission) {
+                await this.model.insertOne(user);
+            } else {
+                if (usersPermission.urls !== user.urls) {
+                    usersPermission.urls = user.urls;
+                    await usersPermission.save();
+                }
             }
-        };
-        let user  = {
-            "title": "usersDefaultPermissions",
-            "type" : "collective",
-            "label": "users",
-            "urls" : {},
-        };
-        this.model.insertOne(admin);
-        this.model.insertOne(user);
+
+            // insert users permission
+            if (!adminsPermission) {
+                await this.model.insertOne(admin);
+            } else {
+                if (adminsPermission.urls !== admin.urls) {
+                    adminsPermission.urls = admin.urls;
+                    await adminsPermission.save();
+                }
+            }
+
+        } catch (error) {
+            console.log('error in setting default permissions');
+            throw error;
+        }
     }
 
     static deleteOne($id) {
