@@ -4,6 +4,7 @@ import createDebug from 'debug';
 import DataBaseConnection from '../core/DataBaseConnection.js';
 import http from 'http';
 import app from '../app.js';
+import SocketConnection from "../core/SocketConnection.js";
 
 // init app and requirement
 let server;
@@ -11,19 +12,21 @@ let debug = createDebug('exoroya-backend:server');
 let port  = normalizePort(process.env.PORT || '5000');
 
 // connect to db
-DataBaseConnection.connect().then(r => {
+await DataBaseConnection.connect();
 
-    // set port
-    app.set('port', port);
+// set port
+app.set('port', port);
 
-    // create server
-    server = http.createServer(app);
+// create server
+server = http.createServer(app);
 
-    // listen server
-    server.listen(port);
-    server.on('error', onError);
-    server.on('listening', onListening);
-});
+// create socket io server
+await SocketConnection.createServer(server);
+
+// listen server
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
 
 //Normalize a port into a number, string, or false.
 function normalizePort(val) {
