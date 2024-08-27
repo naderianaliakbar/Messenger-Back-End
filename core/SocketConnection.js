@@ -1,15 +1,18 @@
 import {Server}             from 'socket.io';
 import ConversationsHandler from "../SocketHandlers/ConversationsHandler.js";
 import socketIOJWT          from 'socketio-jwt';
+import RedisConnection      from "./RedisConnection.js";
+
+// Get Redis Client
+const redisClient = await RedisConnection.getInstance();
 
 class SocketConnection {
     static io;
-    static Clients = {};
     static options = {
         transports: ['websocket']
     };
 
-    static createServer(httpServer) {
+    static async createServer(httpServer) {
         this.io = new Server(httpServer, this.options);
 
         // add jwt auth
@@ -21,35 +24,18 @@ class SocketConnection {
         );
 
         // register handlers
-        const onConnection = (socket) => {
+        const onConnection = async (socket) => {
 
             // set socket nikname to user _id
             socket.nikname = socket.decoded_token.data._id;
 
-            // get access to user
-            if (this.Clients[socket.nikname]) {
-                this.Clients[socket.nikname].sockets.push(socket.id);
-            } else {
-                // new user connected
-                this.Clients[socket.nikname] = {
-                    sockets: [socket.id]
-                };
-            }
+            // save user socket in redis
+            await redisClient.rPush(`SocketClient:${socket.nikname}:sockets`, socket.id);
 
             // register socket disconnect event
-            socket.on('disconnect', () => {
-                // check if user has active session
-                if (this.Clients[socket.nikname]) {
-                    // remove this socket from user sockets
-                    this.Clients[socket.nikname].sockets.splice(
-                        this.Clients[socket.nikname].sockets.indexOf(socket.id),
-                        1
-                    );
-                    // if user has no active socket remove from clients
-                    if (this.Clients[socket.nikname].sockets.length < 1) {
-                        delete this.Clients[socket.nikname];
-                    }
-                }
+            socket.on('disconnect', async () => {
+                // delete user active socket from redis
+                await redisClient.lRem(`SocketClient:${socket.nikname}:sockets`, 0, socket.id);
             });
 
             ConversationsHandler(this.io, socket);

@@ -5,6 +5,7 @@ import DataBaseConnection from '../core/DataBaseConnection.js';
 import http from 'http';
 import app from '../app.js';
 import SocketConnection from "../core/SocketConnection.js";
+import RedisConnection from "../core/RedisConnection.js";
 
 // init app and requirement
 let server;
@@ -13,6 +14,9 @@ let port  = normalizePort(process.env.PORT || '5000');
 
 // connect to db
 await DataBaseConnection.connect();
+
+// create redis connection
+await RedisConnection.getInstance();
 
 // set port
 app.set('port', port);
