@@ -3,9 +3,9 @@ import '../core/EnvironmentLoader.js'
 import createDebug from 'debug';
 import DataBaseConnection from '../core/DataBaseConnection.js';
 import http from 'http';
-import app from '../app.js';
-import SocketConnection from "../core/SocketConnection.js";
-import RedisConnection from "../core/RedisConnection.js";
+import app              from '../app.js';
+import SocketConnection from "../core/Socket/SocketConnection.js";
+import RedisConnection  from "../core/RedisConnection.js";
 
 // init app and requirement
 let server;

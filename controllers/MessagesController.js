@@ -2,6 +2,10 @@ import Controllers             from '../core/Controllers.js';
 import MessagesModel           from '../models/MessagesModel.js';
 import InputsController        from "./InputsController.js";
 import ConversationsController from "./ConversationsController.js";
+import RedisConnection         from '../core/RedisConnection.js';
+
+// init the redis publisher
+const redisPublisher = await RedisConnection.getPublisherClient();
 
 class MessagesController extends Controllers {
     static model = new MessagesModel();
@@ -90,6 +94,12 @@ class MessagesController extends Controllers {
                         // update conversation updatedAt field
                         conversation.data.updatedAt = new Date();
                         conversation.data.save();
+
+                        // publish message
+                        redisPublisher.publish('messages', JSON.stringify({
+                            operation: 'insert',
+                            data     : response.toObject()
+                        }));
 
                         // check the result ... and return
                         return resolve({

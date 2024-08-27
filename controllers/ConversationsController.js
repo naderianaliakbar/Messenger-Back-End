@@ -2,6 +2,10 @@ import Controllers        from '../core/Controllers.js';
 import ConversationsModel from '../models/ConversationsModel.js';
 import InputsController   from "./InputsController.js";
 import {ObjectId}         from "mongodb";
+import RedisConnection    from '../core/RedisConnection.js';
+
+// init the redis publisher
+const redisPublisher = await RedisConnection.getPublisherClient();
 
 class ConversationsController extends Controllers {
     static model = new ConversationsModel();
@@ -57,6 +61,13 @@ class ConversationsController extends Controllers {
                 // add to db
                 await this.model.insertOne(conversation).then(
                     (response) => {
+
+                        // publish conversation
+                        redisPublisher.publish('conversations', JSON.stringify({
+                            operation: 'insert',
+                            data     : response.toObject()
+                        }));
+
                         // check the result ... and return
                         return resolve({
                             code: 200,

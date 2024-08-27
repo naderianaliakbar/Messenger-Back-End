@@ -1,7 +1,9 @@
-import {Server}             from 'socket.io';
-import ConversationsHandler from "../SocketHandlers/ConversationsHandler.js";
-import socketIOJWT          from 'socketio-jwt';
-import RedisConnection      from "./RedisConnection.js";
+import {Server}              from 'socket.io';
+import ConversationsHandler  from "./Handlers/ConversationsHandler.js";
+import socketIOJWT           from 'socketio-jwt';
+import RedisConnection       from "../RedisConnection.js";
+import MessagesListener      from "./listeners/MessagesListener.js";
+import ConversationsListener from "./listeners/ConversationsListener.js";
 
 // Get Redis Client
 const redisClient = await RedisConnection.getInstance();
@@ -16,12 +18,10 @@ class SocketConnection {
         this.io = new Server(httpServer, this.options);
 
         // add jwt auth
-        this.io.use(
-            socketIOJWT.authorize({
-                secret   : process.env.TOKEN_SECRET,
-                handshake: true
-            })
-        );
+        this.io.use(socketIOJWT.authorize({
+            secret   : process.env.TOKEN_SECRET,
+            handshake: true
+        }));
 
         // register handlers
         const onConnection = async (socket) => {
@@ -40,6 +40,10 @@ class SocketConnection {
 
             ConversationsHandler(this.io, socket);
         };
+
+        // register messages subscribers
+        MessagesListener(this.io);
+        ConversationsListener(this.io);
 
         // set onConnection event
         this.io.on('connection', onConnection);
