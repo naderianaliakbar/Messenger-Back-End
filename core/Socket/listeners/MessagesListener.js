@@ -22,7 +22,7 @@ export default (io) => {
         if (conversation) {
             for (let member of conversation.data.members) {
                 member = member.toString();
-                if (member !== data._sender) {
+                if (member !== data._user) {
                     // get member sockets
                     let memberSockets = await redisClient.lRange(`SocketClient:${member}:sockets`, 0, -1);
                     // send message data to every socket of member

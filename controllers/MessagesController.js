@@ -96,9 +96,11 @@ class MessagesController extends Controllers {
                         conversation.data.save();
 
                         // publish message
+                        let publishData   = response.toObject();
+                        publishData._user = $input.user.data._id;
                         redisPublisher.publish('messages', JSON.stringify({
                             operation: 'insert',
-                            data     : response.toObject()
+                            data     : publishData
                         }));
 
                         // check the result ... and return
@@ -111,9 +113,80 @@ class MessagesController extends Controllers {
                         return reject(response);
                     });
             } catch (error) {
-                console.log(error);
                 return reject(error);
             }
+        });
+    }
+
+    static read($input) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // check valid conversation id
+                await InputsController.validateInput($input, {
+                    _conversation: {type: 'mongoId', required: true},
+                    _message     : {type: 'mongoId', required: true},
+                });
+
+                // find the conversation
+                const conversation = await ConversationsController.get(
+                    $input._conversation,
+                    {select: '_id'}
+                );
+
+                // find the message
+                const message = await this.get(
+                    $input._message,
+                    {select: '_id _readBy'}
+                );
+
+                // check message read before
+                if (message.data._readBy.includes($input.user.data._id)) {
+                    return resolve({
+                        code: 400,
+                        data: {
+                            message: 'This message has already been read'
+                        }
+                    });
+                }
+
+                // add user id to _readBy
+                message.data._readBy.push($input.user.data._id);
+                // save to db
+                await message.data.save().then(
+                    (response) => {
+
+                        // publish read status
+                        redisPublisher.publish('messages', JSON.stringify({
+                            operation: 'read',
+                            data     : {
+                                _id          : $input._message,
+                                _conversation: $input._conversation,
+                                _user        : $input.user.data._id
+                            }
+                        }));
+
+                        return resolve({code: 200});
+                    }
+                );
+
+            } catch (error) {
+                return reject(error);
+            }
+        });
+    }
+
+    static get($id, $options = {}, $type = 'api') {
+        return new Promise((resolve, reject) => {
+            this.model.get($id, $options).then(
+                async (response) => {
+                    return resolve({
+                        code: 200,
+                        data: response
+                    });
+                },
+                (response) => {
+                    return reject(response);
+                });
         });
     }
 
