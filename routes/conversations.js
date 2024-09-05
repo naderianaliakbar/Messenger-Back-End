@@ -184,4 +184,35 @@ router.put(
     }
 );
 
+router.post(
+    '/:conversationId/files',
+    AuthController.authorizeJWT,
+    AuthController.checkAccess,
+    function (req, res) {
+        // create clean input
+        let $input = InputsController.clearInput(req.body);
+        // get id from params and put into Input
+        let $params = InputsController.clearInput(req.params);
+
+        // add request parameters to $input
+        $input.req = req;
+        $input.res = res;
+
+        // add conversation _id to input
+        $input._conversation = $params.conversationId;
+
+        // add author to created unit
+        $input.user = req.user;
+
+        MessagesController.uploadFile($input).then(
+            (response) => {
+                return res.status(response.code).json(response.data);
+            },
+            (error) => {
+                return res.status(error.code ?? 500).json(error.data ?? {});
+            }
+        );
+    }
+);
+
 export default router;

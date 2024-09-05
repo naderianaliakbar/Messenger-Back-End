@@ -26,7 +26,7 @@ class RedisConnection {
             });
 
             await this.client.connect();
-            console.log('Redis Connection Created');
+            console.log('Redis Connection created');
         }
     }
 

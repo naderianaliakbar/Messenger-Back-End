@@ -7,7 +7,9 @@ class MessagesModel extends Models {
     static schema = new Schema({
             _conversation  : {type: Schema.Types.ObjectId, ref: 'conversation', required: true},
             _sender        : {type: Schema.Types.ObjectId, ref: 'users', required: true},
-            type           : {type: String, enum: ['text', 'image', 'video', 'file', 'audio', 'sticker', 'system'], required: true},
+            type           : {
+                type: String, enum: ['text', 'image', 'video', 'file', 'audio', 'sticker', 'system'], required: true
+            },
             content        : String,
             reactions      : {
                 type   : [
@@ -21,15 +23,7 @@ class MessagesModel extends Models {
             _replyToMessage: {type: Schema.Types.ObjectId, ref: 'messages'},
             isEdited       : {type: Boolean, default: undefined},
             _deletedFor    : {type: [{type: Schema.Types.ObjectId, ref: 'users'}], default: undefined},
-            attachments    : {
-                type   : [
-                    {
-                        fileName: String,
-                        size    : Number
-                    }
-                ],
-                default: undefined
-            },
+            attachment     : Schema.Types.Mixed,
             _readBy        : [{type: Schema.Types.ObjectId, ref: 'users'}]
         },
         {timestamps: true});
