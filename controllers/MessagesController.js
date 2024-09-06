@@ -5,6 +5,8 @@ import ConversationsController from "./ConversationsController.js";
 import RedisConnection         from '../core/RedisConnection.js';
 import multer                  from 'multer';
 import {ObjectId}              from 'mongodb';
+import fs                      from 'fs';
+import path                    from 'path';
 
 // init the redis publisher
 const redisPublisher = await RedisConnection.getPublisherClient();
@@ -249,6 +251,61 @@ class MessagesController extends Controllers {
 
                 });
 
+
+            } catch (error) {
+                return reject(error);
+            }
+        });
+    }
+
+    static getFile($input) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // check valid conversation id
+                await InputsController.validateInput($input, {
+                    _conversation: {type: 'mongoId', required: true},
+                    fileName     : {type: 'string', required: true}
+                });
+
+                // find the conversation
+                const conversation = await ConversationsController.get(
+                    $input._conversation,
+                    {select: '_id members'}
+                );
+
+                // check the user is member of the conversation
+                if (!conversation.data.members.includes($input.user.data._id)) {
+                    return resolve({
+                        code: 403
+                    });
+                }
+
+                // get message
+                console.log($input.fileName);
+                const fileMessage = await this.model.item({
+                    'attachment.file': $input.fileName
+                });
+
+                // check file exists
+                fs.access(filesPath + $input.fileName, fs.constants.F_OK,
+                    (err) => {
+                        if (err) {
+                            return reject({code: 404});
+                        }
+                    });
+
+                // delete File
+                fs.readFile(filesPath + $input.fileName,
+                    (error, buffer) => {
+                        if (error) return reject({code: 500});
+
+                        return resolve({
+                            code       : 200,
+                            data       : buffer,
+                            contentType: fileMessage.attachment.type
+                        })
+
+                    });
 
             } catch (error) {
                 return reject(error);

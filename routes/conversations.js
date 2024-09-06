@@ -190,7 +190,7 @@ router.post(
     AuthController.checkAccess,
     function (req, res) {
         // create clean input
-        let $input = InputsController.clearInput(req.body);
+        let $input  = InputsController.clearInput(req.body);
         // get id from params and put into Input
         let $params = InputsController.clearInput(req.params);
 
@@ -207,6 +207,29 @@ router.post(
         MessagesController.uploadFile($input).then(
             (response) => {
                 return res.status(response.code).json(response.data);
+            },
+            (error) => {
+                return res.status(error.code ?? 500).json(error.data ?? {});
+            }
+        );
+    }
+);
+
+router.get(
+    '/:_conversation/files/:fileName',
+    AuthController.authorizeJWT,
+    AuthController.checkAccess,
+    function (req, res) {
+        // get id from params and put into Input
+        let $params = InputsController.clearInput(req.params);
+
+        // add user to $params
+        $params.user = req.user;
+
+        MessagesController.getFile($params).then(
+            (response) => {
+                res.setHeader('content-type', response.contentType);
+                return res.send(response.data);
             },
             (error) => {
                 return res.status(error.code ?? 500).json(error.data ?? {});
