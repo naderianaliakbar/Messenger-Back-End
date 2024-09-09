@@ -78,15 +78,23 @@ router.put(
 );
 
 router.delete(
-    '/:id',
+    '/:conversationId',
     AuthController.authorizeJWT,
     AuthController.checkAccess,
     function (req, res, next) {
 
-        // get id from params and put into Input
+        // create clean input
+        let $input  = InputsController.clearInput(req.body);
         let $params = InputsController.clearInput(req.params);
 
-        ConversationsController.deleteOne($params.id).then(
+        // add user data
+        $input.user = req.user;
+
+        // add conversation _id to input
+        $input._conversation = $params.conversationId;
+
+
+        ConversationsController.deleteOne($input).then(
             (response) => {
                 return res.status(response.code).json(response.data);
             },

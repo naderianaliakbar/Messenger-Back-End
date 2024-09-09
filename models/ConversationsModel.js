@@ -16,6 +16,7 @@ class ConversationsModel extends Models {
             description   : {type: String, default: undefined}, // groups and channels
             avatars       : {type: [String], default: undefined}, // groups and channels
             _pinnedMessage: {type: Schema.Types.ObjectId, ref: 'messages'},
+            _deletedFor   : {type: [{type: Schema.Types.ObjectId, ref: 'users'}], default: undefined},
             settings      : Schema.Types.Mixed
         },
         {timestamps: true});
@@ -30,7 +31,10 @@ class ConversationsModel extends Models {
                 // مرحله 1: فیلتر کردن گفتگوهای کاربر
                 {
                     $match: {
-                        members: $userId
+                        members: $userId,
+                        _deletedFor: {
+                            $nin: [$userId]
+                        }
                     }
                 },
                 // مرحله 2: دریافت اطلاعات آخرین پیام
@@ -98,7 +102,7 @@ class ConversationsModel extends Models {
                             },
                             {
                                 $project: {
-                                    _id    : 1 ,
+                                    _id    : 1,
                                     name   : 1,
                                     avatars: 1,
                                     color  : 1

@@ -3,6 +3,7 @@ import ConversationsModel from '../models/ConversationsModel.js';
 import InputsController   from "./InputsController.js";
 import {ObjectId}         from "mongodb";
 import RedisConnection    from '../core/RedisConnection.js';
+import MessagesController from "./MessagesController.js";
 
 // init the redis publisher
 const redisPublisher = await RedisConnection.getPublisherClient();
@@ -46,6 +47,20 @@ class ConversationsController extends Controllers {
                         });
 
                         if (exitingConversation) {
+                            // check if deleted before
+                            if(exitingConversation._deletedFor.includes($input.user.data._id)) {
+                                exitingConversation._deletedFor.splice(
+                                    exitingConversation._deletedFor.indexOf($input.user.data._id),
+                                    1
+                                );
+
+                                if(!exitingConversation._deletedFor.length) {
+                                    exitingConversation._deletedFor = undefined;
+                                }
+
+                                exitingConversation.save();
+                            }
+
                             return resolve({
                                 code: 200,
                                 data: exitingConversation.toObject()
@@ -74,8 +89,7 @@ class ConversationsController extends Controllers {
                             data: response.toObject()
                         });
                     });
-            }
-            catch (error) {
+            } catch (error) {
                 return reject(error);
             }
         });
@@ -102,12 +116,12 @@ class ConversationsController extends Controllers {
 
     static listOfConversations($input) {
         return new Promise((resolve, reject) => {
-            let query = {};
-            let userId = new ObjectId($input.user.data._id);
+            let query      = {};
+            let userId     = new ObjectId($input.user.data._id);
             $input.options = {};
 
             // filter
-            this.model.listOfConversations(query,$input.options, userId).then(
+            this.model.listOfConversations(query, $input.options, userId).then(
                 (response) => {
                     // check the result ... and return
                     return resolve({
@@ -183,21 +197,75 @@ class ConversationsController extends Controllers {
         });
     }
 
-    static deleteOne($id) {
-        return new Promise((resolve, reject) => {
-            // check filter is valid ...
-
-            // filter
-            this.model.deleteOne($id).then(
-                (response) => {
-                    // check the result ... and return
-                    return resolve({
-                        code: 200
-                    });
-                },
-                (response) => {
-                    return reject(response);
+    static deleteOne($input) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // check valid conversation id
+                await InputsController.validateInput($input, {
+                    _conversation: {type: 'mongoId', required: true}
                 });
+
+                // find the conversation
+                const conversation = await this.model.get(
+                    $input._conversation,
+                    {select: '_id _deletedFor members'}
+                );
+
+                // check the user is member of the conversation
+                if (!conversation.members.includes($input.user.data._id)) {
+                    return resolve({
+                        code: 403
+                    });
+                }
+
+                // add user _id to deleted for
+                if (conversation._deletedFor) {
+                    if (!conversation._deletedFor.includes($input.user.data._id)) {
+                        conversation._deletedFor.push($input.user.data._id);
+                    }
+                } else {
+                    conversation._deletedFor = [$input.user.data._id];
+                }
+
+                const conversationMessages = await MessagesController.list({
+                    _conversation: $input._conversation
+                }, {
+                    select: '_id'
+                });
+
+                // delete the messages for the current user
+                conversationMessages.data.forEach((message) => {
+                    MessagesController.deleteOne({
+                        _conversation: $input._conversation,
+                        _message     : message._id.toString(),
+                        user         : $input.user
+                    });
+                });
+
+                if (conversation._deletedFor.length === conversation.members.length) {
+                    // delete the conversation
+                    await conversation.deleteOne().then(
+                        (response) => {
+                            return resolve({
+                                code: 200
+                            });
+                        }
+                    );
+                } else {
+                    // delete conversation
+                    await conversation.save().then(
+                        (response) => {
+                            return resolve({
+                                code: 200
+                            })
+                        }
+                    );
+                }
+
+            } catch (error) {
+                console.log(error);
+                return reject(error);
+            }
         });
     }
 

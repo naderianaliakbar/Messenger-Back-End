@@ -458,19 +458,15 @@ class MessagesController extends Controllers {
         });
     }
 
-    static list($input) {
+    static list($input, $options) {
         return new Promise((resolve, reject) => {
-            // check filter is valid and remove other parameters (just valid query by user role) ...
-
             // filter
-            this.model.list($input).then(
+            this.model.list($input, $options).then(
                 (response) => {
                     // check the result ... and return
                     return resolve({
                         code: 200,
-                        data: {
-                            list: response
-                        }
+                        data: response
                     });
                 },
                 (error) => {
@@ -530,7 +526,7 @@ class MessagesController extends Controllers {
 
                 // add user _id to deleted for
                 if (message._deletedFor) {
-                    if(!message._deletedFor.includes($input.user.data._id)) {
+                    if (!message._deletedFor.includes($input.user.data._id)) {
                         message._deletedFor.push($input.user.data._id);
                     }
                 } else {
@@ -552,8 +548,8 @@ class MessagesController extends Controllers {
 
                             // delete file of the message
                             if (message.attachment) {
-                                await fs.unlink(filesPath + message.attachment.file,(error) => {
-                                    if(error) {
+                                await fs.unlink(filesPath + message.attachment.file, (error) => {
+                                    if (error) {
                                         Logger.systemError('deleteMessageFile', error);
                                     }
                                 });
