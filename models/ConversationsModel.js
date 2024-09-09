@@ -48,6 +48,14 @@ class ConversationsModel extends Models {
                         preserveNullAndEmptyArrays: true
                     }
                 },
+                // remove deleted Messages
+                {
+                    $match: {
+                        'lastMessage._deletedFor': {
+                            $nin: [$userId]
+                        }
+                    }
+                },
                 // مرتب‌سازی پیام‌ها بر اساس زمان ارسال و فقط آخرین پیام را نگه می‌داریم
                 {
                     $sort: {

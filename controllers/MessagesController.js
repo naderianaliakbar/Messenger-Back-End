@@ -78,6 +78,11 @@ class MessagesController extends Controllers {
             }
         }
 
+        // remove deleted messages from result
+        query['_deletedFor'] = {
+            $nin: [$input.user.data._id]
+        };
+
         return query;
     }
 
@@ -281,7 +286,6 @@ class MessagesController extends Controllers {
                 }
 
                 // get message
-                console.log($input.fileName);
                 const fileMessage = await this.model.item({
                     'attachment.file': $input.fileName
                 });
@@ -497,21 +501,73 @@ class MessagesController extends Controllers {
         });
     }
 
-    static deleteOne($id) {
-        return new Promise((resolve, reject) => {
-            // check filter is valid ...
-
-            // filter
-            this.model.deleteOne($id).then(
-                (response) => {
-                    // check the result ... and return
-                    return resolve({
-                        code: 200
-                    });
-                },
-                (response) => {
-                    return reject(response);
+    static deleteOne($input) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // check valid conversation id
+                await InputsController.validateInput($input, {
+                    _conversation: {type: 'mongoId', required: true},
+                    _message     : {type: 'mongoId', required: true}
                 });
+
+                // find the conversation
+                const conversation = await ConversationsController.get(
+                    $input._conversation,
+                    {select: '_id members'}
+                );
+
+                // check the user is member of the conversation
+                if (!conversation.data.members.includes($input.user.data._id)) {
+                    return resolve({
+                        code: 403
+                    });
+                }
+
+                const message = await this.model.get($input._message, {
+                    select: '_id _deletedFor'
+                });
+
+                // add user _id to deleted for
+                if (message._deletedFor) {
+                    if(!message._deletedFor.includes($input.user.data._id)) {
+                        message._deletedFor.push($input.user.data._id);
+                    }
+                } else {
+                    message._deletedFor = [$input.user.data._id];
+                }
+
+                if (message._deletedFor.length === conversation.data.members.length || $input.deleteForEveryone) {
+                    // delete the message for everyone
+                    await this.model.deleteOne($input._message).then(
+                        (response) => {
+                            redisPublisher.publish('messages', JSON.stringify({
+                                operation: 'delete',
+                                data     : {
+                                    _id          : $input._message,
+                                    _user        : $input.user.data._id,
+                                    _conversation: $input._conversation
+                                }
+                            }));
+
+                            return resolve({
+                                code: 200
+                            });
+                        }
+                    );
+                } else {
+                    // save the message _deletedFor
+                    await message.save().then(
+                        (response) => {
+                            return resolve({
+                                code: 200
+                            })
+                        }
+                    );
+                }
+            } catch (error) {
+                console.log(error);
+                return reject(error);
+            }
         });
     }
 

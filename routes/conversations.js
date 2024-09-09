@@ -154,6 +154,36 @@ router.get(
     }
 );
 
+router.delete(
+    '/:conversationId/messages/:messageId',
+    AuthController.authorizeJWT,
+    AuthController.checkAccess,
+    function (req, res, next) {
+
+        // create clean input
+        let $input  = InputsController.clearInput(req.body);
+        let $params = InputsController.clearInput(req.params);
+
+        // add author to created unit
+        $input.user = req.user;
+
+        // add conversation _id to input
+        $input._conversation = $params.conversationId;
+
+        // add message _id to input
+        $input._message = $params.messageId;
+
+        MessagesController.deleteOne($input).then(
+            (response) => {
+                return res.status(response.code).json(response.data ?? {});
+            },
+            (error) => {
+                return res.status(error.code ?? 500).json(error.data ?? {});
+            }
+        );
+    }
+);
+
 router.put(
     '/:conversationId/messages/:messageId/read',
     AuthController.authorizeJWT,
