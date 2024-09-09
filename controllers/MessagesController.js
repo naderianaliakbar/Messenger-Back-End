@@ -7,6 +7,7 @@ import multer                  from 'multer';
 import {ObjectId}              from 'mongodb';
 import fs                      from 'fs';
 import path                    from 'path';
+import Logger                  from "../core/Logger.js";
 
 // init the redis publisher
 const redisPublisher = await RedisConnection.getPublisherClient();
@@ -524,7 +525,7 @@ class MessagesController extends Controllers {
                 }
 
                 const message = await this.model.get($input._message, {
-                    select: '_id _deletedFor'
+                    select: '_id attachment _deletedFor'
                 });
 
                 // add user _id to deleted for
@@ -539,7 +540,7 @@ class MessagesController extends Controllers {
                 if (message._deletedFor.length === conversation.data.members.length || $input.deleteForEveryone) {
                     // delete the message for everyone
                     await this.model.deleteOne($input._message).then(
-                        (response) => {
+                        async (response) => {
                             redisPublisher.publish('messages', JSON.stringify({
                                 operation: 'delete',
                                 data     : {
@@ -548,6 +549,15 @@ class MessagesController extends Controllers {
                                     _conversation: $input._conversation
                                 }
                             }));
+
+                            // delete file of the message
+                            if (message.attachment) {
+                                await fs.unlink(filesPath + message.attachment.file,(error) => {
+                                    if(error) {
+                                        Logger.systemError('deleteMessageFile', error);
+                                    }
+                                });
+                            }
 
                             return resolve({
                                 code: 200
