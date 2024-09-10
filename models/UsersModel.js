@@ -17,7 +17,8 @@ class UsersModel extends Models {
             avatars     : [String],
             color       : String,
             contacts    : [{type: Schema.Types.ObjectId, ref: 'users'}],
-            _permissions: {type: Schema.Types.ObjectId, ref: 'permissions'}
+            _permissions: {type: Schema.Types.ObjectId, ref: 'permissions'},
+            lastSeen    : {type: Date, default: undefined}
         },
         {timestamps: true});
 

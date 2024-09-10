@@ -154,12 +154,12 @@ class ConversationsController extends Controllers {
         });
     }
 
-    static list($input) {
+    static list($input, $options) {
         return new Promise((resolve, reject) => {
             // check filter is valid and remove other parameters (just valid query by user role) ...
 
             // filter
-            this.model.list($input).then(
+            this.model.list($input, $options).then(
                 (response) => {
                     // check the result ... and return
                     return resolve({

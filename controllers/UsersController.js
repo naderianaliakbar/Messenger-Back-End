@@ -256,6 +256,20 @@ class UsersController extends Controllers {
         });
     }
 
+    static update($filter, $input) {
+        return new Promise(async (resolve, reject) => {
+            // filter
+            this.model.update($filter, $input).then(
+                (response) => {
+                    // check the result ... and return
+                    return resolve(response);
+                },
+                (response) => {
+                    return reject(response);
+                });
+        });
+    }
+
     static deleteOne($input) {
         return new Promise((resolve, reject) => {
             // check filter is valid ...
