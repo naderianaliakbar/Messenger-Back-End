@@ -16,6 +16,7 @@ export default (io) => {
             select: 'members'
         }).catch((error) => {
             Logger.systemError('message _conversation', error);
+            return false;
         });
 
         // check conversation exists

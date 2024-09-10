@@ -147,6 +147,25 @@ class UsersController extends Controllers {
         });
     }
 
+    static list($input, $options) {
+        return new Promise((resolve, reject) => {
+            // filter
+            this.model.list($input, $options).then(
+                (response) => {
+                    // check the result ... and return
+                    return resolve({
+                        code: 200,
+                        data: response
+                    });
+                },
+                (error) => {
+                    return reject({
+                        code: 500
+                    });
+                });
+        });
+    }
+
     static listOfUsers($input) {
         return new Promise((resolve, reject) => {
             // check filter is valid and remove other parameters (just valid query by user role) ...

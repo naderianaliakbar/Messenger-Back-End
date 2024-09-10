@@ -477,24 +477,75 @@ class MessagesController extends Controllers {
         });
     }
 
-    static updateOne($id, $input) {
-        return new Promise((resolve, reject) => {
-            // check filter is valid ...
-
-            // filter
-            this.model.updateOne($id, {
-                title: {
-                    en: $input.title.en,
-                    fa: $input.title.fa
-                }
-            }).then(
-                (response) => {
-                    // check the result ... and return
-                    return resolve(response);
-                },
-                (response) => {
-                    return reject(response);
+    static updateOne($input) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // check valid conversation id
+                await InputsController.validateInput($input, {
+                    _conversation: {type: 'mongoId', required: true},
+                    _message     : {type: 'mongoId', required: true},
+                    content      : {type: 'string', required: true}
                 });
+
+                // find the conversation
+                const conversation = await ConversationsController.get(
+                    $input._conversation,
+                    {select: '_id members'}
+                );
+
+                // check the user is member of the conversation
+                if (!conversation.data.members.includes($input.user.data._id)) {
+                    return resolve({
+                        code: 403
+                    });
+                }
+
+                const message = await this.model.get($input._message);
+
+                // check the owner of message
+                if (message._sender.toString() !== $input.user.data._id) {
+                    return reject({
+                        code: 403
+                    });
+                }
+
+                // check message type
+                if (message.type !== 'text') {
+                    return reject({
+                        code: 400,
+                        data: {
+                            message: 'You cannot edit this message'
+                        }
+                    })
+                }
+
+                message.content   = $input.content;
+                message.isEdited  = true;
+
+                message.save().then(
+                    (response) => {
+                        // publish message update
+                        let publishData   = response.toObject();
+                        publishData._user = $input.user.data._id;
+                        redisPublisher.publish('messages', JSON.stringify({
+                            operation: 'update',
+                            data     : publishData
+                        }));
+
+                        return reject({
+                            code: 200,
+                            data: response.toObject()
+                        });
+                    },
+                    (error) => {
+                        return reject(error);
+                    }
+                );
+
+
+            } catch (error) {
+                return reject(error);
+            }
         });
     }
 

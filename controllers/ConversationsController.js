@@ -4,6 +4,7 @@ import InputsController   from "./InputsController.js";
 import {ObjectId}         from "mongodb";
 import RedisConnection    from '../core/RedisConnection.js';
 import MessagesController from "./MessagesController.js";
+import UsersController    from "./UsersController.js";
 
 // init the redis publisher
 const redisPublisher = await RedisConnection.getPublisherClient();
@@ -48,13 +49,13 @@ class ConversationsController extends Controllers {
 
                         if (exitingConversation) {
                             // check if deleted before
-                            if(exitingConversation._deletedFor.includes($input.user.data._id)) {
+                            if (exitingConversation._deletedFor.includes($input.user.data._id)) {
                                 exitingConversation._deletedFor.splice(
                                     exitingConversation._deletedFor.indexOf($input.user.data._id),
                                     1
                                 );
 
-                                if(!exitingConversation._deletedFor.length) {
+                                if (!exitingConversation._deletedFor.length) {
                                     exitingConversation._deletedFor = undefined;
                                 }
 
@@ -75,18 +76,31 @@ class ConversationsController extends Controllers {
 
                 // add to db
                 await this.model.insertOne(conversation).then(
-                    (response) => {
+                    async (response) => {
 
                         // publish conversation
+                        let data = response.toObject();
+
+                        // get the members details
+                        let memberDetails = await UsersController.list({
+                            _id: {$in: conversation.members}
+                        }, {
+                            select: '_id name color avatar'
+                        });
+
+                        data.memberDetails = memberDetails.data;
+
+                        data.unreadCount = 0;
+
                         redisPublisher.publish('conversations', JSON.stringify({
                             operation: 'insert',
-                            data     : response.toObject()
+                            data     : data
                         }));
 
                         // check the result ... and return
                         return resolve({
                             code: 200,
-                            data: response.toObject()
+                            data: data
                         });
                     });
             } catch (error) {
@@ -209,7 +223,9 @@ class ConversationsController extends Controllers {
                 const conversation = await this.model.get(
                     $input._conversation,
                     {select: '_id _deletedFor members'}
-                );
+                ).catch((error) => {
+                    return reject(error);
+                });
 
                 // check the user is member of the conversation
                 if (!conversation.members.includes($input.user.data._id)) {
@@ -239,6 +255,9 @@ class ConversationsController extends Controllers {
                         _conversation: $input._conversation,
                         _message     : message._id.toString(),
                         user         : $input.user
+                    }).catch((error) => {
+                        console.log(error);
+                        return reject(error);
                     });
                 });
 
@@ -249,6 +268,10 @@ class ConversationsController extends Controllers {
                             return resolve({
                                 code: 200
                             });
+                        },
+                        (error) => {
+                            console.log(error);
+                            return reject(error);
                         }
                     );
                 } else {
@@ -258,6 +281,10 @@ class ConversationsController extends Controllers {
                             return resolve({
                                 code: 200
                             })
+                        },
+                        (error) => {
+                            console.log(error);
+                            return reject(error);
                         }
                     );
                 }
