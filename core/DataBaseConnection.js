@@ -7,7 +7,11 @@ export default class DataBaseConnection {
         const password = encodeURIComponent(process.env.MongoDB_PASSWORD);
         const host     = encodeURIComponent(process.env.MongoDB_HOST);
         const database = encodeURIComponent(process.env.MongoDB_DATABASE);
-        const uri      = 'mongodb://' + user + ':' + password + '@' + host + ':27017/' + database;
+        const uri      = 'mongodb://' +
+            user + ':' + password + '@' +
+            host + ':27017/' +
+            database + '?' +
+            'authSource=admin';
         await mongoose.connect(uri);
 
         // set strict populate to false
