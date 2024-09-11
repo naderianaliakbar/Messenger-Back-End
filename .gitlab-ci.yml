@@ -1,0 +1,14 @@
+stages:
+  - deploy
+
+before_script:
+  - echo "Starting deployment process..."
+  - apt-get update -y
+  - apt-get install -y ssh
+
+deploy_to_server:
+  stage: deploy
+  only:
+    - release
+  script:
+    - ssh exoroya@31.40.4.87 "cd /home/exoroya/messenger-backend && git pull origin release && npm install && pm2 restart all"
