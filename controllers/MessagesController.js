@@ -519,8 +519,8 @@ class MessagesController extends Controllers {
                     })
                 }
 
-                message.content   = $input.content;
-                message.isEdited  = true;
+                message.content  = $input.content;
+                message.isEdited = true;
 
                 message.save().then(
                     (response) => {
@@ -549,7 +549,7 @@ class MessagesController extends Controllers {
         });
     }
 
-    static deleteOne($input) {
+    static deleteOne($input, $type = 'api') {
         return new Promise(async (resolve, reject) => {
             try {
                 // check valid conversation id
@@ -588,14 +588,16 @@ class MessagesController extends Controllers {
                     // delete the message for everyone
                     await this.model.deleteOne($input._message).then(
                         async (response) => {
-                            redisPublisher.publish('messages', JSON.stringify({
-                                operation: 'delete',
-                                data     : {
-                                    _id          : $input._message,
-                                    _user        : $input.user.data._id,
-                                    _conversation: $input._conversation
-                                }
-                            }));
+                            if ($type === 'api') {
+                                redisPublisher.publish('messages', JSON.stringify({
+                                    operation: 'delete',
+                                    data     : {
+                                        _id          : $input._message,
+                                        _user        : $input.user.data._id,
+                                        _conversation: $input._conversation
+                                    }
+                                }));
+                            }
 
                             // delete file of the message
                             if (message.attachment) {

@@ -250,16 +250,21 @@ class ConversationsController extends Controllers {
                 });
 
                 // delete the messages for the current user
-                conversationMessages.data.forEach((message) => {
-                    MessagesController.deleteOne({
+                for (const message of conversationMessages.data) {
+                    await MessagesController.deleteOne({
                         _conversation: $input._conversation,
                         _message     : message._id.toString(),
                         user         : $input.user
-                    }).catch((error) => {
+                    },'system').catch((error) => {
                         console.log(error);
-                        return reject(error);
+                        return reject({
+                            code: 500,
+                            data: {
+                                message: 'Error in delete messages'
+                            }
+                        });
                     });
-                });
+                }
 
                 if (conversation._deletedFor.length === conversation.members.length) {
                     // delete the conversation
