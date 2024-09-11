@@ -1,16 +1,16 @@
 module.exports = {
     apps: [
         {
-            name: "Messenger-BackEnd", // نام اپلیکیشن شما
-            script: "./bin/www.js",  // مسیر فایل اصلی برنامه Node.js
-            instances: "max",    // اجرا در حالت Cluster با حداکثر تعداد CPU
-            exec_mode: "cluster", // حالت اجرای Cluster
+            name: "Messenger-BackEnd",
+            script: "./bin/www.js",
+            instances: "max",
+            exec_mode: "cluster",
             env: {
-                NODE_ENV: "development", // تنظیمات محیطی برای توسعه
+                NODE_ENV: "development",
                 PORT: 5000
             },
             env_production: {
-                NODE_ENV: "production", // تنظیمات محیطی برای تولید
+                NODE_ENV: "production",
                 PORT: 5000
             }
         }
