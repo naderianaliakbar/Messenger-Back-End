@@ -1,5 +1,5 @@
-import Controllers           from '../core/Controllers.js';
-import  ValidationsModel from '../models/ValidationsModel.js';
+import Controllers      from '../core/Controllers.js';
+import ValidationsModel from '../models/ValidationsModel.js';
 
 class ValidationsController extends Controllers {
     static model = new ValidationsModel();
@@ -18,14 +18,20 @@ class ValidationsController extends Controllers {
                 code += Math.floor(Math.random() * 10);
             }
 
+            // set expire minutes
+            const expireMinutes = 2;
+
             // insert
             this.model.insertOne({
                 certificate: $input.certificate,
                 type       : $input.type,
                 code       : code,
-                expDate    : new Date(new Date().getTime() + 2 * 60000)
+                expDate    : new Date(new Date().getTime() + expireMinutes * 60000)
             }).then(response => {
                 // check the result ... and return
+                setTimeout(async () => {
+                    await this.model.deleteOne(response._id);
+                }, expireMinutes * 60000);
 
                 return resolve(response);
             }).catch(response => {
