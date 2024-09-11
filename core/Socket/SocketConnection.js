@@ -15,7 +15,7 @@ const redisClient = await RedisConnection.getInstance();
 class SocketConnection {
     static io;
     static options = {
-        path: '/socket.io',
+        path: '/api/socket.io',
         transports: ['websocket']
     };
 
