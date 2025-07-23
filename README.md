@@ -1,5 +1,3 @@
----
-
 ## 📦 Messenger Back-End
 
 A RESTful API server built with Node.js and Express.js to support real-time messaging operations.
@@ -103,5 +101,3 @@ Fork the repo, create feature branches, and submit PRs. Please follow best pract
 ### 📄 License
 
 This project is licensed under the MIT License.
-
----
