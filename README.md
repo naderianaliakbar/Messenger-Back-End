@@ -1,29 +1,31 @@
-## 📦 Messenger Back-End
+# Messenger — Back End
 
-A RESTful API server built with Node.js and Express.js to support real-time messaging operations.
+Node.js/Express API and Socket.IO server for the [Messenger front end](https://github.com/naderianaliakbar/Messenger-Front-End).
 
-### 🚀 Features
+## What is implemented
 
-* User authentication with JWT
-* Secure password storage using bcrypt
-* CRUD operations for users and messages
-* Real-time chat support via WebSocket (Socket.IO)
-* MongoDB database integration using Mongoose ORM
-* Input validation with [Joi](https://github.com/sideway/joi)
-* Error handling and structured logging
+- Phone-based login workflow and JWT-protected routes.
+- Users, contacts, conversations, messages, read status and related permission handling.
+- Real-time messaging through Socket.IO.
+- MongoDB persistence through Mongoose, with Redis used at startup and by the application.
+- File/message handling in the message controllers.
 
-### ⚙️ Tech Stack
+## Stack and layout
 
-| Layer          | Technology           |
-| -------------- | -------------------- |
-| Runtime        | Node.js (ES Modules) |
-| Framework      | Express.js           |
-| Database       | MongoDB (Mongoose)   |
-| Authentication | JWT + bcrypt         |
-| Socket Library | Socket.IO            |
-| Validation     | Joi                  |
+Node.js (ES modules), Express 4, MongoDB/Mongoose 8, Redis, Socket.IO 4, JWT and bcrypt.
 
-### 🧩 Installation & Setup
+```text
+app.js                  Express app and /api routes
+bin/www.js              HTTP server, database, Redis and Socket.IO initialization
+core/                   Connections, authentication and socket handlers
+controllers/            Request and business logic
+models/                 MongoDB models
+routes/                 HTTP route definitions
+```
+
+## Local setup
+
+Prerequisites: Node.js and npm or Yarn, MongoDB and Redis.
 
 ```bash
 git clone https://github.com/naderianaliakbar/Messenger-Back-End.git
@@ -31,73 +33,46 @@ cd Messenger-Back-End
 npm install
 ```
 
-Copy `.env.example` to `.env` and configure:
+Configure a local `.env` (do not commit credentials). The code reads at least:
 
 ```dotenv
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/messenger-db
-JWT_SECRET=your_jwt_secret
+MongoDB_HOST=127.0.0.1
+MongoDB_DATABASE=messenger
+MongoDB_USER=
+MongoDB_PASSWORD=
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+STATICS_URL=/static
 ```
 
-### 🏁 Running the Server
+**Important:** Inspect `core/DataBaseConnection.js` and `core/RedisConnection.js` before deploying. The active MongoDB connection currently uses a URL without username/password, although those variables are read. Redis startup currently calls `flushDb()`, which **deletes all keys in the selected Redis database**. Use a dedicated development Redis database and correct that behavior before sharing Redis with other applications. Other authentication configuration is used by `core/Auth/` and `controllers/AuthController.js`; check those files when supplying JWT/OTP settings.
 
 ```bash
-npm run dev     # Run in development mode with nodemon
-npm start       # Run in production mode
+npm start
 ```
 
-API will be available at `http://localhost:5000`.
+The default HTTP port is `5000`. Only `start` is defined in `package.json`; there is no bundled `dev` or `test` script.
 
-### 🛠️ API Endpoints
+## HTTP routes
 
-* **Auth**
+Route prefixes registered in `app.js`:
 
-  * `POST /api/auth/register` – Register new user
-  * `POST /api/auth/login` – Login and receive JWT
-* **Users** *(protected)*
+| Prefix | Purpose |
+| --- | --- |
+| `/api/auth` | Login and logout |
+| `/api/users` | User operations |
+| `/api/contacts` | Contact management |
+| `/api/conversations` | Conversation and message operations |
 
-  * `GET /api/users` – List all users
-  * `GET /api/users/:id` – Get user by ID
-* **Messages** *(protected)*
+For example, `POST /api/auth/login`, `GET /api/conversations`, `POST /api/conversations/:conversationId/messages` and `GET /api/conversations/:conversationId/messages`. Many conversation endpoints use JWT authorization and additional access checks. See `routes/` for the complete route definitions and input requirements.
 
-  * `GET /api/messages/:chatId` – List messages in a chat
-  * `POST /api/messages` – Send a new message
+## Client integration and limitations
 
-Real-time WebSocket events (via Socket.IO):
+The [Nuxt 3 client](https://github.com/naderianaliakbar/Messenger-Front-End) needs HTTP API and Socket.IO URLs that point to this server. Socket.IO is initialized in `core/Socket/SocketConnection.js`; inspect its event handlers for the actual event contract.
 
-* `connection`, `disconnect` – socket lifecycle
-* `message`, `typing`, `read` – chat events
+This repository does not include an automated test script or a sample environment file. Do not treat the service as production-hardened without reviewing authentication, credential handling, Redis isolation and deployment configuration.
 
-### 🧪 Testing
+## License
 
-Include Jest or Mocha/Chai setup if you plan to add unit/integration tests. Example:
-
-```bash
-npm test
-```
-
-### 📘 Project Structure
-
-```
-src/
-├── controllers/
-├── models/
-├── routes/
-├── services/
-├── middlewares/
-├── utils/
-└── index.js
-```
-
-### 💡 Usage Tips
-
-* Always include `Authorization: Bearer <JWT>` header when using protected routes
-* Use WS or Socket.IO clients for real-time message handling
-
-### 🤝 Contribution
-
-Fork the repo, create feature branches, and submit PRs. Please follow best practices for code quality and testing.
-
-### 📄 License
-
-This project is licensed under the MIT License.
+No license file is included in this repository. No license grant should be assumed.
